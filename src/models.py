@@ -49,22 +49,15 @@ class BaseModel:
                 feed_dic = {self.input_rgb: input_rgb}
 
                 self.iteration = self.iteration + 1
-                result = self.sess.run([self.dis_train, self.lossD_result], feed_dict=feed_dic)
+                result = self.sess.run([self.dis_train, self.lossD_result_train, self.lossG_result_train, self.acc_result_train], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
 
                 lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
-                # tf.summary.scalar('D_loss_training', lossD)
-                # tf.summary.scalar('D_fake_training', lossD_fake)
-                # tf.summary.scalar('D_real_training', lossD_real)
-                # tf.summary.scalar('G_loss_training', lossG)
-                # tf.summary.scalar('G_L1_training', lossG_l1)
-                # tf.summary.scalar('G_gan_training', lossG_gan)
-                # tf.summary.scalar('acc_training', acc)
-                #
-                # merged = tf.summary.merge_all()
                 self.writer.add_summary(result[1], step)
+                self.writer.add_summary(result[2], step)
+                self.writer.add_summary(result[3], step)
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
@@ -111,20 +104,13 @@ class BaseModel:
         for input_rgb in val_generator:
             feed_dic = {self.input_rgb: input_rgb}
 
-            self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
+            result = self.sess.run([self.dis_loss, self.gen_loss, self.accuracy, self.lossD_result_val, self.lossG_result_val, self.acc_result_val], feed_dict=feed_dic)
 
             lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
-            # tf.summary.scalar('D_loss_validation', lossD)
-            # tf.summary.scalar('D_fake_validation', lossD_fake)
-            # tf.summary.scalar('D_real_validation', lossD_real)
-            # tf.summary.scalar('G_loss_validation', lossG)
-            # tf.summary.scalar('G_L1_validation', lossG_l1)
-            # tf.summary.scalar('G_gan_validation', lossG_gan)
-            # tf.summary.scalar('acc_validation', acc)
-            #
-            # merged = tf.summary.merge_all()
-            # self.writer.add_summary(self.lossD_result, step)
+            self.writer.add_summary(result[3], step)
+            self.writer.add_summary(result[4], step)
+            self.writer.add_summary(result[5], step)
 
             progbar.add(len(input_rgb), values=[
                 ("D loss", lossD),
@@ -229,15 +215,22 @@ class BaseModel:
         self.dis_loss_fake = tf.reduce_mean(dis_fake_ce)
         self.dis_loss = tf.reduce_mean(dis_real_ce + dis_fake_ce)
 
-        self.lossD_result = tf.summary.scalar('dis_loss', self.dis_loss)
+        self.lossD_result_train = tf.summary.scalar('dis_loss_training', self.dis_loss)
+        self.lossD_result_val = tf.summary.scalar('dis_loss_validation', self.dis_loss)
 
         self.gen_loss_gan = tf.reduce_mean(gen_ce)
         self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - gen)) * self.options.l1_weight
         self.gen_loss = self.gen_loss_gan + self.gen_loss_l1
 
+        self.lossG_result_train = tf.summary.scalar('gen_loss_training', self.gen_loss)
+        self.lossG_result_val = tf.summary.scalar('gen_loss_validation', self.gen_loss)
+
         self.sampler = tf.identity(gen_factory.create(self.input_gray, kernel, seed, reuse_variables=True), name='output')
         self.accuracy = pixelwise_accuracy(self.input_color, gen, self.options.color_space, self.options.acc_thresh)
         self.learning_rate = tf.constant(self.options.lr)
+
+        self.acc_result_train = tf.summary.scalar('acc_training', self.accuracy)
+        self.acc_result_val = tf.summary.scalar('acc_validation', self.accuracy)
 
         # learning rate decay
         if self.options.lr_decay and self.options.lr_decay_rate > 0:
