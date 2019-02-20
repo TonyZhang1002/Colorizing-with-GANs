@@ -55,16 +55,16 @@ class BaseModel:
 
                 lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
-                tf.summary.scalar('D_loss_training', lossD)
-                tf.summary.scalar('D_fake_training', lossD_fake)
-                tf.summary.scalar('D_real_training', lossD_real)
-                tf.summary.scalar('G_loss_training', lossG)
-                tf.summary.scalar('G_L1_training', lossG_l1)
-                tf.summary.scalar('G_gan_training', lossG_gan)
-                tf.summary.scalar('acc_training', acc)
-
-                merged = tf.summary.merge_all()
-                self.writer.add_summary(merged, step)
+                # tf.summary.scalar('D_loss_training', lossD)
+                # tf.summary.scalar('D_fake_training', lossD_fake)
+                # tf.summary.scalar('D_real_training', lossD_real)
+                # tf.summary.scalar('G_loss_training', lossG)
+                # tf.summary.scalar('G_L1_training', lossG_l1)
+                # tf.summary.scalar('G_gan_training', lossG_gan)
+                # tf.summary.scalar('acc_training', acc)
+                #
+                # merged = tf.summary.merge_all()
+                # self.writer.add_summary(merged, step)
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
@@ -115,16 +115,16 @@ class BaseModel:
 
             lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
-            tf.summary.scalar('D_loss_validation', lossD)
-            tf.summary.scalar('D_fake_validation', lossD_fake)
-            tf.summary.scalar('D_real_validation', lossD_real)
-            tf.summary.scalar('G_loss_validation', lossG)
-            tf.summary.scalar('G_L1_validation', lossG_l1)
-            tf.summary.scalar('G_gan_validation', lossG_gan)
-            tf.summary.scalar('acc_validation', acc)
-
-            merged = tf.summary.merge_all()
-            self.writer.add_summary(merged, step)
+            # tf.summary.scalar('D_loss_validation', lossD)
+            # tf.summary.scalar('D_fake_validation', lossD_fake)
+            # tf.summary.scalar('D_real_validation', lossD_real)
+            # tf.summary.scalar('G_loss_validation', lossG)
+            # tf.summary.scalar('G_L1_validation', lossG_l1)
+            # tf.summary.scalar('G_gan_validation', lossG_gan)
+            # tf.summary.scalar('acc_validation', acc)
+            #
+            # merged = tf.summary.merge_all()
+            # self.writer.add_summary(merged, step)
 
             progbar.add(len(input_rgb), values=[
                 ("D loss", lossD),
@@ -287,7 +287,12 @@ class BaseModel:
         lossG = lossG_l1 + lossG_gan
 
         acc = self.accuracy.eval(feed_dict=feed_dic)
+
         step = self.sess.run(self.global_step)
+
+        lossD_result = tf.summary.scalar('D_loss_training', lossD)
+        lossD_result = self.sess.run(lossD_result)
+        self.writer.add_summary(lossD_result, step)
 
         return lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step
 
