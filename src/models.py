@@ -52,6 +52,7 @@ class BaseModel:
                 self.sess.run([self.dis_train], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
+                lossD_run = self.sess.run([self.lossD_result], feed_dict=feed_dic)
 
                 lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
@@ -64,7 +65,7 @@ class BaseModel:
                 # tf.summary.scalar('acc_training', acc)
                 #
                 # merged = tf.summary.merge_all()
-                # self.writer.add_summary(merged, step)
+                self.writer.add_summary(lossD_run, step)
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
@@ -259,6 +260,9 @@ class BaseModel:
 
         self.saver = tf.train.Saver()
 
+        self.lossD_result = tf.summary.scalar('dis_loss_training', self.dis_loss)
+
+
     def load(self):
         ckpt = tf.train.get_checkpoint_state(self.options.checkpoints_path)
         if ckpt is not None:
@@ -289,10 +293,6 @@ class BaseModel:
         acc = self.accuracy.eval(feed_dict=feed_dic)
 
         step = self.sess.run(self.global_step)
-
-        lossD_result = tf.summary.scalar('D_loss_training', lossD)
-        lossD_result = self.sess.run(lossD_result)
-        self.writer.add_summary(lossD_result, step)
 
         return lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step
 
