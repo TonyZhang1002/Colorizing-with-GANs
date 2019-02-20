@@ -64,8 +64,7 @@ class BaseModel:
                 tf.summary.scalar('acc_training', acc)
 
                 merged = tf.summary.merge_all()
-                metrics = self.sess.run(merged, feed_dict=feed_dic)
-                self.writer.add_summary(metrics, step)
+                self.writer.add_summary(merged, step)
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
@@ -125,8 +124,7 @@ class BaseModel:
             tf.summary.scalar('acc_validation', acc)
 
             merged = tf.summary.merge_all()
-            metrics = self.sess.run(merged, feed_dict=feed_dic)
-            self.writer.add_summary(metrics, step)
+            self.writer.add_summary(merged, step)
 
             progbar.add(len(input_rgb), values=[
                 ("D loss", lossD),
