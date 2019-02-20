@@ -19,6 +19,7 @@ class BaseModel:
         self.options = options
         self.name = options.name
         self.samples_dir = os.path.join(options.checkpoints_path, 'samples')
+        self.graph_dir = os.path.join(options.checkpoints_path, 'graph')
         self.test_log_file = os.path.join(options.checkpoints_path, 'log_test.dat')
         self.train_log_file = os.path.join(options.checkpoints_path, 'log_train.dat')
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -28,6 +29,7 @@ class BaseModel:
         self.iteration = 0
         self.epoch = 0
         self.is_built = False
+        self.writer = tf.summary.FileWriter(self.graph_dir, self.sess.graph)
 
     def train(self):
         total = len(self.dataset_train)
@@ -52,6 +54,18 @@ class BaseModel:
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
 
                 lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
+
+                tf.summary.scalar('D_loss_training', lossD)
+                tf.summary.scalar('D_fake_training', lossD_fake)
+                tf.summary.scalar('D_real_training', lossD_real)
+                tf.summary.scalar('G_loss_training', lossG)
+                tf.summary.scalar('G_L1_training', lossG_l1)
+                tf.summary.scalar('G_gan_training', lossG_gan)
+                tf.summary.scalar('acc_training', acc)
+
+                merged = tf.summary.merge_all()
+                metrics = self.sess.run(merged, feed_dict=feed_dic)
+                self.writer.add_summary(metrics, step)
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
@@ -101,6 +115,18 @@ class BaseModel:
             self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
 
             lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
+
+            tf.summary.scalar('D_loss_validation', lossD)
+            tf.summary.scalar('D_fake_validation', lossD_fake)
+            tf.summary.scalar('D_real_validation', lossD_real)
+            tf.summary.scalar('G_loss_validation', lossG)
+            tf.summary.scalar('G_L1_validation', lossG_l1)
+            tf.summary.scalar('G_gan_validation', lossG_gan)
+            tf.summary.scalar('acc_validation', acc)
+
+            merged = tf.summary.merge_all()
+            metrics = self.sess.run(merged, feed_dict=feed_dic)
+            self.writer.add_summary(metrics, step)
 
             progbar.add(len(input_rgb), values=[
                 ("D loss", lossD),
