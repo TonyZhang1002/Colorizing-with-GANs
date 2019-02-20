@@ -49,10 +49,9 @@ class BaseModel:
                 feed_dic = {self.input_rgb: input_rgb}
 
                 self.iteration = self.iteration + 1
-                self.sess.run([self.dis_train], feed_dict=feed_dic)
+                result = self.sess.run([self.dis_train, self.lossD_result], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
-                lossD_run = self.sess.run([self.lossD_result], feed_dict=feed_dic)
 
                 lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
@@ -65,7 +64,7 @@ class BaseModel:
                 # tf.summary.scalar('acc_training', acc)
                 #
                 # merged = tf.summary.merge_all()
-                self.writer.add_summary(lossD_run, step)
+                self.writer.add_summary(result[1], step)
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
@@ -125,7 +124,7 @@ class BaseModel:
             # tf.summary.scalar('acc_validation', acc)
             #
             # merged = tf.summary.merge_all()
-            # self.writer.add_summary(merged, step)
+            # self.writer.add_summary(self.lossD_result, step)
 
             progbar.add(len(input_rgb), values=[
                 ("D loss", lossD),
@@ -230,6 +229,8 @@ class BaseModel:
         self.dis_loss_fake = tf.reduce_mean(dis_fake_ce)
         self.dis_loss = tf.reduce_mean(dis_real_ce + dis_fake_ce)
 
+        self.lossD_result = tf.summary.scalar('dis_loss', self.dis_loss)
+
         self.gen_loss_gan = tf.reduce_mean(gen_ce)
         self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - gen)) * self.options.l1_weight
         self.gen_loss = self.gen_loss_gan + self.gen_loss_l1
@@ -259,8 +260,6 @@ class BaseModel:
         ).minimize(self.dis_loss, var_list=dis_factory.var_list, global_step=self.global_step)
 
         self.saver = tf.train.Saver()
-
-        self.lossD_result = tf.summary.scalar('dis_loss_training', self.dis_loss)
 
 
     def load(self):
